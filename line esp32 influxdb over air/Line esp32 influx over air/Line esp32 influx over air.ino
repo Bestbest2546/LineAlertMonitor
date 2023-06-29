@@ -165,59 +165,21 @@ const unsigned long alertInterval = 3600000; // 1 ชั่วโมง
 
 
 
-void checkWatConditions(float Wat, const char* lineToken) {
-  static unsigned long startTime = 0;
-  static bool charging = false;
-  static float lastWat = 0.0;
+void notifyCharging(float Wat, const char* lineToken) {
+  static bool alreadyNotified = false;
 
-  if (Wat < 1200.0) {
-    if (!charging) {
-      charging = true;
-      startTime = millis();
-      
-    }
-  } else {
-    charging = false;
-  }
-
-  unsigned long elapsedTime = millis() - startTime;
-  if (charging && Wat > 5500.0) {
-        String message ="กำลังชาร์จแบตเตอรี่";
+  if (Wat > 5500.0 && !alreadyNotified) {
+    String message = "กำลังชาร์จแบตเตอรี่";
     sendLineNotifyWithSticker(message.c_str(), lineToken, 11538, 51626523);
-
-    charging = false;
-      startTime = 0; // รีสตาร์ทเวลาเพื่อเริ่มต้นใหม่
-      // delay(500);
+    alreadyNotified = true;
   }
 
-  lastWat = Wat;
-}
-
-void checkBattfinish(float Wat, const char* lineToken) {
-  static unsigned long startTime = 0;
-  static bool charging = false;
-  static bool chargeCompleted = false;
-
-  if (Wat < 6000.0) {
-    if (!charging) {
-      startTime = millis();
-      charging = true;
-    }
-  } else {
-    charging = false;
-    chargeCompleted = false;
-  }
-
-  unsigned long elapsedTime = millis() - startTime;
-  if (charging && Wat < 1200.0 && !chargeCompleted) {
-    if (elapsedTime >= 6000000) {
-      sendLineNotifyWithSticker("ชาร์จแบตเตอรี่เสร็จแล้ว", lineToken, 11538, 51626505);
-      chargeCompleted = true;
-      startTime = 0;
-    }
+  if (alreadyNotified && Wat < 1000.0) {
+    alreadyNotified = false;
+  String message = "ชาร์จแบตเตอรี่เสร็จแล้ว";
+    sendLineNotifyWithSticker(message.c_str(), lineToken, 446, 1991);
   }
 }
-
 
 
 
@@ -282,8 +244,9 @@ void loop() {
     }
   }
 
-  checkWatConditions(Wat, lineToken);
-  checkBattfinish( Wat, lineToken);
+  // checkWatConditions(Wat, lineToken);
+  // checkBattfinish( Wat, lineToken);
+  notifyCharging( Wat, lineToken);
   
 
   // ตรวจสอบและส่งข้อความ Line Notify เมื่อ Wat เกินค่าที่กำหนด
